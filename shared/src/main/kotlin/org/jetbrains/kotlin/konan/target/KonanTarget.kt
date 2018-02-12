@@ -96,7 +96,7 @@ private class TargetManagerImpl(val userRequest: String?, val hostManager: HostM
     override fun list() {
         hostManager.enabled.forEach {
             val isDefault = if (it == target) "(default)" else ""
-            val aliasList = HostManager.targetAliases[it.visibleName]?.joinToString(", ") ?: ""
+            val aliasList = HostManager.listAliases(it.visibleName).joinToString(", ")
             println(String.format("%1$-30s%2$-10s%3\$s", "${it.visibleName}:", "$isDefault", aliasList))
         }
     }
@@ -105,7 +105,7 @@ private class TargetManagerImpl(val userRequest: String?, val hostManager: HostM
         return if (userRequest == null || userRequest == "host") {
             HostManager.host
         } else {
-            val resolvedAlias = HostManager.targetAliasResolutions[userRequest] ?: userRequest
+            val resolvedAlias = HostManager.resolveAlias(userRequest)
             hostManager.targets[hostManager.known(resolvedAlias)]!!
         }
     }
@@ -134,7 +134,7 @@ open class HostManager(protected val distribution: Distribution = Distribution()
     fun toKonanTargets(names: Iterable<String>): List<KonanTarget> {
         return names.map {
             if (it == "host") HostManager.host
-            else targets[known(it)]!!
+            else targets[known(resolveAlias(it))]!!
         }
     }
 
@@ -147,7 +147,7 @@ open class HostManager(protected val distribution: Distribution = Distribution()
 
     fun targetByName(name: String): KonanTarget {
         if (name == "host") return host
-        val target = targets[name]
+        val target = targets[resolveAlias(name)]
         if (target == null) throw TargetSupportException("Unknown target name: $name")
         return target
     }
@@ -242,7 +242,7 @@ open class HostManager(protected val distribution: Distribution = Distribution()
 
         val knownTargetTemplates = listOf("zephyr")
 
-        val targetAliasResolutions = mapOf(
+        private val targetAliasResolutions = mapOf(
                 "linux"       to "linux_x64",
                 "macbook"     to "macos_x64",
                 "macos"       to "macos_x64",
@@ -255,13 +255,17 @@ open class HostManager(protected val distribution: Distribution = Distribution()
                 "mingw"       to "mingw_x64"
         )
 
-        val targetAliases: Map<String, List<String>> by lazy {
+        private val targetAliases: Map<String, List<String>> by lazy {
             val result = mutableMapOf<String, MutableList<String>>()
             targetAliasResolutions.entries.forEach {
                 result.getOrPut(it.value, { mutableListOf() } ).add(it.key)
             }
             result
         }
+
+        fun resolveAlias(request: String): String = targetAliasResolutions[request] ?: request
+
+        fun listAliases(target: String): List<String> = targetAliases[target] ?: emptyList()
     }
 }
 
