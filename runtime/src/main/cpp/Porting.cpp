@@ -77,10 +77,27 @@ void consoleErrorUtf8(const void* utf8, uint32_t sizeBytes) {
 uint32_t consoleReadUtf8(void* utf8, uint32_t maxSizeBytes) {
 #ifdef KONAN_ZEPHYR
   return 0;
-#else 
+#else
   char* result = ::fgets(reinterpret_cast<char*>(utf8), maxSizeBytes - 1, stdin);
   if (result == nullptr) return 0;
-  return ::strlen(result);
+  uint32_t length = ::strlen(result);
+
+  // fgets reads until EOF so we need to remove linefeeds
+  char* iter = result + length - 1;
+  bool isTrimming = true;
+  while (iter != result && isTrimming) {
+    switch (*iter) {
+      case '\n':
+      case '\r':
+        length--;
+        *iter = 0;
+        break;
+      default:
+        isTrimming = false;
+    }
+    iter--;
+  }
+  return length;
 #endif
 }
 
