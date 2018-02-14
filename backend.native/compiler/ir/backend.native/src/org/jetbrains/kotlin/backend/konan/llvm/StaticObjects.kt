@@ -16,14 +16,10 @@
 
 package org.jetbrains.kotlin.backend.konan.llvm
 
-import llvm.LLVMLinkage
-import llvm.LLVMSetLinkage
-import llvm.LLVMTypeRef
-import llvm.LLVMValueRef
+import llvm.*
 import org.jetbrains.kotlin.backend.konan.descriptors.isUnit
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
-import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
@@ -68,7 +64,7 @@ private fun StaticData.createRef(type: KotlinType, objHeaderPtr: ConstPointer): 
 internal fun StaticData.createKotlinArray(arrayType: KotlinType, elements: List<LLVMValueRef>) =
         createKotlinArray(arrayType, elements.map { constValue(it) }).llvm
 
-internal fun StaticData.createKotlinArray(arrayType: KotlinType, elements: List<ConstValue>): ConstPointer {
+internal fun StaticData.createKotlinArray(arrayType: KotlinType, elements: List<ConstValue>, name: String = ""): ConstPointer {
     val typeInfo = arrayType.typeInfoPtr!!
 
     val bodyElementType: LLVMTypeRef = elements.firstOrNull()?.llvmType ?: int8Type
@@ -77,7 +73,7 @@ internal fun StaticData.createKotlinArray(arrayType: KotlinType, elements: List<
 
     val compositeType = structType(runtime.arrayHeaderType, arrayBody.llvmType)
 
-    val global = this.createGlobal(compositeType, "")
+    val global = this.createGlobal(compositeType, name)
 
     val objHeaderPtr = global.pointer.getElementPtr(0)
     val arrayHeader = arrayHeader(typeInfo, elements.size)

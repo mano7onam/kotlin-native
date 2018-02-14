@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.backend.konan.llvm
 import kotlinx.cinterop.*
 import llvm.*
 import org.jetbrains.kotlin.backend.konan.Context
+import org.jetbrains.kotlin.backend.konan.KonanConfigKeys
 import org.jetbrains.kotlin.backend.konan.descriptors.CurrentKonanModule
 import org.jetbrains.kotlin.backend.konan.descriptors.DeserializedKonanModule
 import org.jetbrains.kotlin.backend.konan.descriptors.LlvmSymbolOrigin
