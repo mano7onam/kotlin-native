@@ -272,3 +272,6 @@ internal val ClassDescriptor.objectInstanceFieldSymbolName: String
 
 internal val ClassDescriptor.typeInfoHasVtableAttached: Boolean
     get() = !this.isAbstract() && !this.isExternalObjCClass()
+
+internal val ModuleDescriptor.moduleConstructorName
+    get() = "_Konan_init_${name}"
