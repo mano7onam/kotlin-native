@@ -68,7 +68,7 @@ model {
         clangstubs(NativeLibrarySpec) {
             sources {
                 c.source.srcDir 'prebuilt/nativeInteropStubs/c'
-		cpp.source.srcDir 'prebuilt/nativeInteropStubs/cpp'
+		        cpp.source.srcDir 'prebuilt/nativeInteropStubs/cpp'
             }
 
             binaries.all {
@@ -128,7 +128,6 @@ kotlinNativeInterop {
         defFile 'clang.def'
         compilerOpts cflags
         linkerOpts ldflags
-        genTask.args '-keepcstubs', 'true'
         genTask.dependsOn libclangextTask
         genTask.inputs.dir libclangextDir
     }
@@ -151,7 +150,7 @@ task updatePrebuilt {
         }
 
         copy {
-            from("$buildDir/nativelibs") {
+            from("$buildDir/interopTemp") {
                 include 'clangstubs.c'
             }
             into 'prebuilt/nativeInteropStubs/c'
