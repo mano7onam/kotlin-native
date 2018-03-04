@@ -424,25 +424,50 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
         // Condition for a corner case: for (i in a until Int.MIN_VALUE) {}.
         // Check if forLoopInfo.bound > MIN_VALUE.
         val progressionType = forLoopInfo.progressionInfo.progressionType
-        return irCall(context.irBuiltIns.greaterFunByOperandType[context.irBuiltIns.int]?.symbol!!).apply {
-            val minConst = when {
-                progressionType.isIntProgression() -> IrConstImpl
-                        .int(startOffset, endOffset, context.builtIns.intType, Int.MIN_VALUE)
-                progressionType.isCharProgression() -> IrConstImpl
-                        .char(startOffset, endOffset, context.builtIns.charType, 0.toChar())
-                progressionType.isLongProgression() -> IrConstImpl
-                        .long(startOffset, endOffset, context.builtIns.longType, Long.MIN_VALUE)
-                else -> throw IllegalArgumentException("Unknown progression type")
-            }
-            val compareToCall = irCall(symbols.getBinaryOperator(OperatorNameConventions.COMPARE_TO,
-                    forLoopInfo.bound.descriptor.type,
-                    minConst.type)).apply {
-                dispatchReceiver = irGet(forLoopInfo.bound)
-                putValueArgument(0, minConst)
-            }
-            putValueArgument(0, compareToCall)
-            putValueArgument(1, irInt(0))
+        val builtIns = context.irBuiltIns
+
+        val compareType = when {
+            progressionType.isIntProgression() -> builtIns.int
+            progressionType.isCharProgression() -> builtIns.char
+            progressionType.isLongProgression() -> builtIns.long
+            else -> throw IllegalArgumentException("Unknown progression type")
         }
+        val comparingBuiltIn = context.irBuiltIns.greaterFunByOperandType[compareType]?.symbol
+
+        return if (comparingBuiltIn == null)
+            irCall(context.irBuiltIns.greaterFunByOperandType[context.irBuiltIns.int]?.symbol!!).apply {
+                val minConst = when {
+                    progressionType.isIntProgression() -> IrConstImpl
+                            .int(startOffset, endOffset, context.builtIns.intType, Int.MIN_VALUE)
+                    progressionType.isCharProgression() -> IrConstImpl
+                            .char(startOffset, endOffset, context.builtIns.charType, 0.toChar())
+                    progressionType.isLongProgression() -> IrConstImpl
+                            .long(startOffset, endOffset, context.builtIns.longType, Long.MIN_VALUE)
+                    else -> throw IllegalArgumentException("Unknown progression type")
+                }
+                val compareToCall = irCall(symbols.getBinaryOperator(OperatorNameConventions.COMPARE_TO,
+                        forLoopInfo.bound.descriptor.type,
+                        minConst.type)).apply {
+                    dispatchReceiver = irGet(forLoopInfo.bound)
+                    putValueArgument(0, minConst)
+                }
+                putValueArgument(0, compareToCall)
+                putValueArgument(1, irInt(0))
+            }
+            else
+            irCall(comparingBuiltIn).apply {
+                val minConst = when {
+                    progressionType.isIntProgression() -> IrConstImpl
+                            .int(startOffset, endOffset, context.builtIns.intType, Int.MIN_VALUE)
+                    progressionType.isCharProgression() -> IrConstImpl
+                            .char(startOffset, endOffset, context.builtIns.charType, 0.toChar())
+                    progressionType.isLongProgression() -> IrConstImpl
+                            .long(startOffset, endOffset, context.builtIns.longType, Long.MIN_VALUE)
+                    else -> throw IllegalArgumentException("Unknown progression type")
+                }
+                putValueArgument(0, irGet(forLoopInfo.bound))
+                putValueArgument(1, minConst)
+            }
     }
 
     // TODO: Eliminate the loop if we can prove that it will not be executed.
@@ -577,7 +602,9 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
     }
 
 //    override fun visitCall(call: IrCall) : IrExpression {
-//        if (call.origin != IrStatementOrigin.RA)
+//        if (call.origin != IrStatementOrigin.IN) {
+//            call.
+//        }
 //    }
     //endregion
 }
