@@ -449,17 +449,37 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
     private fun DeclarationIrBuilder.buildEmptyCheck(loop: IrLoop, forLoopInfo: ForLoopInfo): IrExpression {
         val builtIns = context.irBuiltIns
         val increasing = forLoopInfo.progressionInfo.increasing
-        val comparingBuiltIn = if (increasing) builtIns.lessOrEqualFunByOperandType[builtIns.int]?.symbol
-        else builtIns.greaterOrEqualFunByOperandType[builtIns.int]?.symbol
 
-        // Check if inductionVariable <= last.
-        val compareTo = symbols.getBinaryOperator(OperatorNameConventions.COMPARE_TO,
-                forLoopInfo.inductionVariable.descriptor.type,
-                forLoopInfo.last.descriptor.type)
+        val loopType = when (forLoopInfo.progressionInfo.progressionType.elementType) {
+            context.builtIns.charType -> builtIns.char
+            context.builtIns.intType -> builtIns.int
+            context.builtIns.longType -> builtIns.long
+            else -> builtIns.long
+        }
 
-        val check: IrExpression = irCall(comparingBuiltIn!!).apply {
-            putValueArgument(0, irCallOp(compareTo, irGet(forLoopInfo.inductionVariable), irGet(forLoopInfo.last)))
-            putValueArgument(1, irInt(0))
+        var comparingBuiltIn = if (increasing) builtIns.lessOrEqualFunByOperandType[loopType]?.symbol
+        else builtIns.greaterOrEqualFunByOperandType[loopType]?.symbol
+
+        val check : IrExpression =
+        if (comparingBuiltIn == null) {
+            comparingBuiltIn = if (increasing) builtIns.lessOrEqualFunByOperandType[builtIns.int]?.symbol
+            else builtIns.greaterOrEqualFunByOperandType[builtIns.int]?.symbol
+
+            // Check if inductionVariable <= last.
+            val compareTo = symbols.getBinaryOperator(OperatorNameConventions.COMPARE_TO,
+                    forLoopInfo.inductionVariable.descriptor.type,
+                    forLoopInfo.last.descriptor.type)
+
+            irCall(comparingBuiltIn!!).apply {
+                putValueArgument(0, irCallOp(compareTo, irGet(forLoopInfo.inductionVariable), irGet(forLoopInfo.last)))
+                putValueArgument(1, irInt(0))
+            }
+        }
+        else {
+            irCall(comparingBuiltIn!!).apply {
+                putValueArgument(0, irGet(forLoopInfo.inductionVariable))
+                putValueArgument(1, irGet(forLoopInfo.last))
+            }
         }
 
         // Process closed and open ranges in different manners.
@@ -555,6 +575,10 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
         }
         return result ?: super.visitVariable(declaration)
     }
+
+//    override fun visitCall(call: IrCall) : IrExpression {
+//        if (call.origin != IrStatementOrigin.RA)
+//    }
     //endregion
 }
 
