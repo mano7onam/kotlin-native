@@ -321,16 +321,6 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                 else -> return null
             }
 
-//            val collectionIndices = symbols.symbolTable.referenceSimpleFunction(context.builtIns.builtInsModule
-//                    .getPackage(KotlinBuiltIns.COLLECTIONS_PACKAGE_FQ_NAME).memberScope
-//                    .getContributedVariables(Name.identifier("indices"), NoLookupLocation.FROM_BACKEND)
-//                    .single().getter!!
-//            )
-//            val collectionIndices = symbols.symbolTable.referenceSimpleFunction(collection.descriptor.unsubstitutedMemberScope
-//                    .getContributedVariables(Name.identifier("indices"), NoLookupLocation.FROM_BACKEND)
-//                    .single().getter!!
-//            )
-
             // TODO: Process constructors and other factory functions.
             return when (expression.symbol) {
                 in rangeToSymbols -> buildRangeTo(expression, progressionType)
