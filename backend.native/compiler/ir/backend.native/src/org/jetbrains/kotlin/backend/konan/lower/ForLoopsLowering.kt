@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
 import org.jetbrains.kotlin.backend.common.lower.irIfThen
 import org.jetbrains.kotlin.backend.konan.Context
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.ir.IrElement
@@ -36,6 +37,7 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrVariableSymbol
 import org.jetbrains.kotlin.ir.visitors.*
 import org.jetbrains.kotlin.name.FqName
@@ -125,6 +127,7 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
     private val rangeToSymbols by lazy { getProgressionBuildingMethods("rangeTo") }
     private val untilSymbols by lazy { getProgressionBuildingExtensions("until", FqName("kotlin.ranges")) }
     private val downToSymbols by lazy { getProgressionBuildingExtensions("downTo", FqName("kotlin.ranges")) }
+    private val indicesSymbols by lazy { getProgressionBuildingExtensions("indices", KotlinBuiltIns.COLLECTIONS_PACKAGE_FQ_NAME) }
     private val stepSymbols by lazy {
         getExtensionsForProgressionElements("step", FqName("kotlin.ranges")) {
             it.extensionReceiverParameter?.type in symbols.progressionClassesTypes &&
@@ -286,6 +289,27 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                     ProgressionInfo(progressionType, it.first, it.bound, step, it.increasing, needBoundCalculation, it.closed)
                 }
 
+        private fun buildProgressionInfoFromGetIndices(expression: IrCall, progressionType: ProgressionType) : ProgressionInfo {
+            val builder = context.createIrBuilder(scopeOwnerSymbol, expression.startOffset, expression.endOffset)
+            with (builder) {
+                val const0 = IrConstImpl.int(expression.startOffset, expression.endOffset, context.builtIns.intType, 0)
+                val const1 = IrConstImpl.int(expression.startOffset, expression.endOffset, context.builtIns.intType, 1)
+
+                val size = irCall(symbols.collectionSize).apply {
+                    dispatchReceiver = expression
+                }
+
+                val minusOperator = symbols.getBinaryOperator(
+                        OperatorNameConventions.MINUS,
+                        progressionType.elementType,
+                        progressionType.elementType
+                )
+                val bound = irCallOp(minusOperator, size, const1)
+
+                return ProgressionInfo(progressionType, const0, bound)
+            }
+        }
+
         override fun visitElement(element: IrElement, data: Nothing?): ProgressionInfo? = null
 
         override fun visitCall(expression: IrCall, data: Nothing?): ProgressionInfo? {
@@ -297,12 +321,23 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                 else -> return null
             }
 
+//            val collectionIndices = symbols.symbolTable.referenceSimpleFunction(context.builtIns.builtInsModule
+//                    .getPackage(KotlinBuiltIns.COLLECTIONS_PACKAGE_FQ_NAME).memberScope
+//                    .getContributedVariables(Name.identifier("indices"), NoLookupLocation.FROM_BACKEND)
+//                    .single().getter!!
+//            )
+//            val collectionIndices = symbols.symbolTable.referenceSimpleFunction(collection.descriptor.unsubstitutedMemberScope
+//                    .getContributedVariables(Name.identifier("indices"), NoLookupLocation.FROM_BACKEND)
+//                    .single().getter!!
+//            )
+
             // TODO: Process constructors and other factory functions.
             return when (expression.symbol) {
                 in rangeToSymbols -> buildRangeTo(expression, progressionType)
                 in untilSymbols -> buildUntil(expression, progressionType)
                 in downToSymbols -> buildDownTo(expression, progressionType)
                 in stepSymbols -> buildStep(expression, progressionType)
+                symbols.collectionIndices -> buildProgressionInfoFromGetIndices(expression, progressionType)
                 else -> null
             }
         }
