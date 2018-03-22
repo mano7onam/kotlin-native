@@ -123,7 +123,6 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
     private val rangeToSymbols by lazy { getProgressionBuildingMethods("rangeTo") }
     private val untilSymbols by lazy { getProgressionBuildingExtensions("until", FqName("kotlin.ranges")) }
     private val downToSymbols by lazy { getProgressionBuildingExtensions("downTo", FqName("kotlin.ranges")) }
-    private val indicesSymbols by lazy { getProgressionBuildingExtensions("indices", KotlinBuiltIns.COLLECTIONS_PACKAGE_FQ_NAME) }
     private val stepSymbols by lazy {
         getExtensionsForProgressionElements("step", FqName("kotlin.ranges")) {
             it.extensionReceiverParameter?.type in symbols.progressionClassesTypes &&
@@ -292,7 +291,7 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                 val const1 = IrConstImpl.int(expression.startOffset, expression.endOffset, context.builtIns.intType, 1)
 
                 val size = irCall(symbols.collectionSize).apply {
-                    dispatchReceiver = expression
+                    dispatchReceiver = expression.extensionReceiver
                 }
 
                 val minusOperator = symbols.getBinaryOperator(
