@@ -329,16 +329,16 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
             val builder = context.createIrBuilder(scopeOwnerSymbol, expression.startOffset, expression.endOffset)
             with (builder) {
                 val first = irCall(symbols.progressionFirst[typeId]).apply {
-                    dispatchReceiver = expression
+                    dispatchReceiver = expression.copy()
                 }
                 val bound = irCall(symbols.progressionLast[typeId]).apply {
-                    dispatchReceiver = expression
+                    dispatchReceiver = expression.copy()
                 }
                 val step = irCall(symbols.progressionStep[typeId]).apply {
-                    dispatchReceiver = expression
+                    dispatchReceiver = expression.copy()
                 }
                 val isEmpty = irCall(symbols.progressionIsEmpty[typeId]).apply {
-                    dispatchReceiver = expression
+                    dispatchReceiver = expression.copy()
                 }
                 return ProgressionInfo(progressionType, first, bound, step,
                         isCalculatedWithCalls = false,
