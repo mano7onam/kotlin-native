@@ -499,13 +499,13 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                 }
             } else {
                 val builtIns = context.irBuiltIns
-                comparingBuiltIn = comparingBuiltins[builtIns.int]?.symbol
+                comparingBuiltIn = comparingBuiltins.getValue(builtIns.int).symbol
 
                 // Check if left <= right.
                 val compareTo = symbols.getBinaryOperator(OperatorNameConventions.COMPARE_TO,
                         lhs.type, rhs.type)
 
-                irCall(comparingBuiltIn!!).apply {
+                irCall(comparingBuiltIn).apply {
                     putValueArgument(0, irCallOp(compareTo, lhs, rhs))
                     putValueArgument(1, irInt(0))
                 }
@@ -545,9 +545,7 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
         val increasing = forLoopInfo.progressionInfo.increasing
 
         val expressionType = forLoopInfo.progressionInfo.progressionType.elementType.asSimpleType()
-        if (!expressionType.isInt() && !expressionType.isChar() && !expressionType.isLong()) {
-            throw IllegalArgumentException("Unknown progression type")
-        }
+        assert(expressionType.isInt() || expressionType.isChar() || expressionType.isLong())
 
         val comparingBuiltIns = if (increasing) builtIns.lessOrEqualFunByOperandType
                                 else builtIns.greaterOrEqualFunByOperandType
