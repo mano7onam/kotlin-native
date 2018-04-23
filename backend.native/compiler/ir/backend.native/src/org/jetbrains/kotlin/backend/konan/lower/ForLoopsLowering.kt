@@ -244,9 +244,19 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
             val bound: IrVariableSymbol,
             val last: IrVariableSymbol,
             val step: IrVariableSymbol,
-            var loopVariable: IrVariableSymbol? = null,
-            val isCalculatedWithCalls: Boolean = true,
-            val isEmptyCond: IrExpression? = null)
+            var loopVariable: IrVariableSymbol? = null)
+    {
+        // mean that first, bound and step of the progression
+        // received with calls appropriate properties of the progression
+        val isCalculatedWithCalls: Boolean
+        get() = progressionInfo.isCalculatedWithCalls
+
+        // if calculated with calls then this will be call progression.isEmpty()
+        // else it will be null
+        val isEmptyCond: IrExpression?
+        get() = progressionInfo.isEmptyCond
+    }
+
 
     private inner class ProgressionInfoBuilder : IrElementVisitor<ProgressionInfo?, Nothing?> {
 
@@ -448,9 +458,7 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                         inductionVariable.symbol,
                         boundValue.symbol,
                         lastValue.symbol,
-                        stepValue.symbol,
-                        isCalculatedWithCalls = progressionInfo.isCalculatedWithCalls,
-                        isEmptyCond = progressionInfo.isEmptyCond)
+                        stepValue.symbol)
 
                 return IrCompositeImpl(startOffset, endOffset, context.builtIns.unitType, null, statements)
             }
