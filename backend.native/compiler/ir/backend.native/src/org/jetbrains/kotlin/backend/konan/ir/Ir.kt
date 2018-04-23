@@ -355,22 +355,21 @@ internal class KonanSymbols(context: Context, val symbolTable: SymbolTable): Sym
             .single().getter!!
     )
 
+    private fun getPropertyByName(symbol : IrClassSymbol, name : String) : IrSimpleFunctionSymbol =
+            symbolTable.referenceSimpleFunction(symbol.descriptor.unsubstitutedMemberScope
+            .getContributedVariables(Name.identifier(name), NoLookupLocation.FROM_BACKEND)
+            .single().getter!!)
+
     val progressionFirst = progressionClasses.map { symbol ->
-        symbolTable.referenceSimpleFunction(symbol.descriptor.unsubstitutedMemberScope
-                .getContributedVariables(Name.identifier("first"), NoLookupLocation.FROM_BACKEND)
-                .single().getter!!)
+        getPropertyByName(symbol, "first")
     }
 
     val progressionLast = progressionClasses.map { symbol ->
-        symbolTable.referenceSimpleFunction(symbol.descriptor.unsubstitutedMemberScope
-                .getContributedVariables(Name.identifier("last"), NoLookupLocation.FROM_BACKEND)
-                .single().getter!!)
+        getPropertyByName(symbol, "last")
     }
 
     val progressionStep = progressionClasses.map { symbol ->
-        symbolTable.referenceSimpleFunction(symbol.descriptor.unsubstitutedMemberScope
-                .getContributedVariables(Name.identifier("step"), NoLookupLocation.FROM_BACKEND)
-                .single().getter!!)
+        getPropertyByName(symbol, "step")
     }
 
     val progressionIsEmpty = progressionClasses.map { symbol ->
