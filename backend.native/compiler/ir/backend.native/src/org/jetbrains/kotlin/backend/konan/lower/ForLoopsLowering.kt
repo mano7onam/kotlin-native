@@ -654,8 +654,8 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
             return expression
         }
 
-        val parent = expression.dispatchReceiver as? IrCall ?: return expression
-        val progressionInfo = parent.accept(ProgressionInfoBuilder(), null) ?: return expression
+        val receiverCall = expression.dispatchReceiver as? IrCall ?: return expression
+        val progressionInfo = receiverCall.accept(ProgressionInfoBuilder(), null) ?: return expression
         if (!progressionInfo.isStepOne()) {
             return expression
         }
@@ -673,16 +673,12 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                 statements.add(it)
             }.symbol
 
-            val left = parent.dispatchReceiver
-            val right = parent.getValueArgument(0)
-            if (left == null || right == null) {
-                return expression
-            }
+            val left = progressionInfo.first
+            val right = progressionInfo.bound
 
             val comparingLeft = when {
                 progressionInfo.increasing -> builtIns.lessOrEqualFunByOperandType
-                !progressionInfo.increasing -> builtIns.greaterOrEqualFunByOperandType
-                else -> return expression
+                else -> builtIns.greaterOrEqualFunByOperandType
             }
             val callCheckLeft = buildComparsion(left, irGet(varComp), left.type.asSimpleType(), comparingLeft)
 
@@ -690,8 +686,7 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                 progressionInfo.increasing && progressionInfo.closed -> builtIns.lessOrEqualFunByOperandType
                 progressionInfo.increasing && !progressionInfo.closed -> builtIns.lessFunByOperandType
                 !progressionInfo.increasing && progressionInfo.closed -> builtIns.greaterOrEqualFunByOperandType
-                !progressionInfo.increasing && !progressionInfo.closed -> builtIns.greaterFunByOperandType
-                else -> return expression
+                else -> builtIns.greaterFunByOperandType
             }
             val callCheckRight = buildComparsion(irGet(varComp), right, right.type.asSimpleType(), comparingRight)
 
