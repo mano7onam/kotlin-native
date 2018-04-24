@@ -220,7 +220,10 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
 
     //region Util classes ==============================================================================================
     // TODO: Replace with a cast when such support is added in the boxing lowering.
-    private data class ProgressionType(val elementType: KotlinType, val numberCastFunctionName: Name) {
+    private data class ProgressionType(val elementType: KotlinType,
+                                       val numberCastFunctionName: Name,
+                                       val typeSymbol : IrClassSymbol)
+    {
         fun isIntProgression()  = KotlinBuiltIns.isInt(elementType)
         fun isLongProgression() = KotlinBuiltIns.isLong(elementType)
         fun isCharProgression() = KotlinBuiltIns.isChar(elementType)
@@ -257,12 +260,11 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
         get() = progressionInfo.isEmptyCond
     }
 
-
     private inner class ProgressionInfoBuilder : IrElementVisitor<ProgressionInfo?, Nothing?> {
 
-        val INT_PROGRESSION = ProgressionType(context.builtIns.intType, Name.identifier("toInt"))
-        val LONG_PROGRESSION = ProgressionType(context.builtIns.longType, Name.identifier("toLong"))
-        val CHAR_PROGRESSION = ProgressionType(context.builtIns.charType, Name.identifier("toChar"))
+        val INT_PROGRESSION = ProgressionType(context.builtIns.intType, Name.identifier("toInt"), symbols.intProgression)
+        val LONG_PROGRESSION = ProgressionType(context.builtIns.longType, Name.identifier("toLong"), symbols.longProgression)
+        val CHAR_PROGRESSION = ProgressionType(context.builtIns.charType, Name.identifier("toChar"), symbols.charProgression)
 
         private fun buildRangeTo(expression: IrCall, progressionType: ProgressionType) =
                 ProgressionInfo(progressionType,
@@ -328,26 +330,26 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
 
         override fun visitGetValue(expression: IrGetValue, data: Nothing?): ProgressionInfo? {
             val type = expression.type
-            var typeId = 0
             val progressionType = when {
-                type.isSubtypeOf(symbols.charProgression.descriptor.defaultType) -> { typeId = 0; CHAR_PROGRESSION }
-                type.isSubtypeOf(symbols.intProgression.descriptor.defaultType)  -> { typeId = 1; INT_PROGRESSION  }
-                type.isSubtypeOf(symbols.longProgression.descriptor.defaultType) -> { typeId = 2; LONG_PROGRESSION }
+                type.isSubtypeOf(symbols.charProgression.descriptor.defaultType) -> { CHAR_PROGRESSION }
+                type.isSubtypeOf(symbols.intProgression.descriptor.defaultType)  -> { INT_PROGRESSION  }
+                type.isSubtypeOf(symbols.longProgression.descriptor.defaultType) -> { LONG_PROGRESSION }
                 else -> return null
             }
 
+            val typeProgressionSymbol = progressionType.typeSymbol
             val builder = context.createIrBuilder(scopeOwnerSymbol, expression.startOffset, expression.endOffset)
             with (builder) {
-                val first = irCall(symbols.progressionFirst[typeId]).apply {
+                val first = irCall(symbols.progressionFirst[typeProgressionSymbol]!!).apply {
                     dispatchReceiver = expression.copy()
                 }
-                val bound = irCall(symbols.progressionLast[typeId]).apply {
+                val bound = irCall(symbols.progressionLast[typeProgressionSymbol]!!).apply {
                     dispatchReceiver = expression.copy()
                 }
-                val step = irCall(symbols.progressionStep[typeId]).apply {
+                val step = irCall(symbols.progressionStep[typeProgressionSymbol]!!).apply {
                     dispatchReceiver = expression.copy()
                 }
-                val isEmpty = irCall(symbols.progressionIsEmpty[typeId]).apply {
+                val isEmpty = irCall(symbols.progressionIsEmpty[typeProgressionSymbol]!!).apply {
                     dispatchReceiver = expression.copy()
                 }
                 return ProgressionInfo(progressionType, first, bound, step,

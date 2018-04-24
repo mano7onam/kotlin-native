@@ -361,22 +361,22 @@ internal class KonanSymbols(context: Context, val symbolTable: SymbolTable): Sym
             .single().getter!!)
 
     val progressionFirst = progressionClasses.map { symbol ->
-        getPropertyByName(symbol, "first")
-    }
+        symbol to getPropertyByName(symbol, "first")
+    }.toMap()
 
     val progressionLast = progressionClasses.map { symbol ->
-        getPropertyByName(symbol, "last")
-    }
+        symbol to getPropertyByName(symbol, "last")
+    }.toMap()
 
     val progressionStep = progressionClasses.map { symbol ->
-        getPropertyByName(symbol, "step")
-    }
+        symbol to getPropertyByName(symbol, "step")
+    }.toMap()
 
     val progressionIsEmpty = progressionClasses.map { symbol ->
-        symbolTable.referenceSimpleFunction(symbol.descriptor.unsubstitutedMemberScope
+        symbol to symbolTable.referenceSimpleFunction(symbol.descriptor.unsubstitutedMemberScope
                 .getContributedFunctions(Name.identifier("isEmpty"), NoLookupLocation.FROM_BACKEND)
                 .single())
-    }
+    }.toMap()
 
     val collectionIndices = symbolTable.referenceSimpleFunction(builtIns.builtInsModule
             .getPackage(KotlinBuiltIns.COLLECTIONS_PACKAGE_FQ_NAME).memberScope
