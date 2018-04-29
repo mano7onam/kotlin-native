@@ -328,14 +328,16 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
 
         override fun visitElement(element: IrElement, data: Nothing?): ProgressionInfo? = null
 
+        fun KotlinType.progressionType(): ProgressionType? = when {
+            isSubtypeOf(symbols.charProgression.descriptor.defaultType) -> CHAR_PROGRESSION
+            isSubtypeOf(symbols.intProgression.descriptor.defaultType) -> INT_PROGRESSION
+            isSubtypeOf(symbols.longProgression.descriptor.defaultType) -> LONG_PROGRESSION
+            else -> null
+        }
+
         override fun visitGetValue(expression: IrGetValue, data: Nothing?): ProgressionInfo? {
             val type = expression.type
-            val progressionType = when {
-                type.isSubtypeOf(symbols.charProgression.descriptor.defaultType) -> { CHAR_PROGRESSION }
-                type.isSubtypeOf(symbols.intProgression.descriptor.defaultType)  -> { INT_PROGRESSION  }
-                type.isSubtypeOf(symbols.longProgression.descriptor.defaultType) -> { LONG_PROGRESSION }
-                else -> return null
-            }
+            val progressionType = type.progressionType() ?: return null
 
             val typeProgressionSymbol = progressionType.typeSymbol
             val builder = context.createIrBuilder(scopeOwnerSymbol, expression.startOffset, expression.endOffset)
@@ -360,12 +362,7 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
 
         override fun visitCall(expression: IrCall, data: Nothing?): ProgressionInfo? {
             val type = expression.type
-            val progressionType = when {
-                type.isSubtypeOf(symbols.charProgression.descriptor.defaultType) -> CHAR_PROGRESSION
-                type.isSubtypeOf(symbols.intProgression.descriptor.defaultType) -> INT_PROGRESSION
-                type.isSubtypeOf(symbols.longProgression.descriptor.defaultType) -> LONG_PROGRESSION
-                else -> return null
-            }
+            val progressionType = type.progressionType() ?: return null
 
             // TODO: Process constructors and other factory functions.
             return when (expression.symbol) {
