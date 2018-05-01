@@ -1,4 +1,8 @@
-fun main(args: Array<String>) {
+package codegen.controlflow.for_loops_lowering.test20
+
+import kotlin.test.*
+
+@Test fun runTest() {
     var sum = 0
     for (a in 0 .. 10 step 1) {
       for (b in 0 .. 10 step 2) {

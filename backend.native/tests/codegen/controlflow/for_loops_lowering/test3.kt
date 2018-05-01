@@ -1,13 +1,12 @@
-fun foo() : Int {
-  println("foo")
-  return 2
-}
+package codegen.controlflow.for_loops_lowering.test3
 
-fun bar() : Int {
-  return 1
-}
+import kotlin.test.*
 
-fun main(args: Array<String>) {
+@Test fun runTest() {
+    fun foo() : Int { println("foo"); return 2 }
+
+    fun bar() : Int = 1
+
     val rng = (Int.MAX_VALUE - 5) .. Int.MAX_VALUE
     var arr = listOf(4, 5, 6)
     for (i in rng) {

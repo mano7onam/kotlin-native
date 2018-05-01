@@ -1,8 +1,9 @@
-fun foo() : Int {
-    return 2
-}
+package codegen.controlflow.for_loops_lowering.test1
 
-fun main(args: Array<String>) {
+import kotlin.test.*
+
+@Test fun runTest() {
+    fun foo() : Int = 2
     val rng = 5 .. 10
     var arr = arrayOf(1, 2, 3)
     for (i in rng) {

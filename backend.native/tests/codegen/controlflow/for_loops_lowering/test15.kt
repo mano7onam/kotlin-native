@@ -1,4 +1,8 @@
-fun main(args: Array<String>) {
+package codegen.controlflow.for_loops_lowering.test15
+
+import kotlin.test.*
+
+@Test fun runTest() {
     val arr = arrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     var list = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     var sum = 0
