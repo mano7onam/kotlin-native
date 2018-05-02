@@ -292,7 +292,6 @@ private class ForLoopsTransformer(val context: Context) : IrElementTransformerVo
                     val (newStepCheck, needBoundCalculation) = irCheckProgressionStep(progressionType, newStep)
                     val step = when {
                         it.step == null -> newStepCheck
-                        // There were step calls before. Just add our check in the container or create a new one.
                         else -> return null
                     }
                     ProgressionInfo(progressionType, it.first, it.bound, step, it.increasing, needBoundCalculation, it.closed)
